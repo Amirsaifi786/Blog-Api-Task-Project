@@ -1,61 +1,424 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# 📝 Laravel Blog API with Sanctum Authentication
 
-## About Laravel
+This project is a robust Blog API built with Laravel, featuring user authentication powered by Laravel Sanctum. It provides endpoints for user registration, login, creating, reading, updating posts, and commenting on posts.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## ✨ Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+* **User Authentication:** Secure user registration and login using Laravel Sanctum.
+* **Token-Based API:** All authenticated endpoints utilize Bearer tokens for authorization.
+* **Post Management:** Create, retrieve, and update blog posts.
+* **Commenting System:** Users can add comments to specific posts.
+* **Structured Responses:** API responses are formatted in JSON for easy consumption.
+* **Pagination:** Post listings include pagination metadata.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 🚀 Getting Started
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Follow these steps to set up and run the Blog API on your local machine.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 1. Project Setup
 
-## Laravel Sponsors
+First, create a new Laravel project and install Laravel Sanctum:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+# Create a new Laravel project
+composer create-project laravel/laravel blog-api
 
-### Premium Partners
+# Navigate into the project directory
+cd blog-api
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# Install Laravel Sanctum
+composer require laravel/sanctum
 
-## Contributing
+# Publish Sanctum's configuration and migration files
+php artisan vendor:publish --tag="sanctum-config"
+php artisan vendor:publish --tag="sanctum-migrations"
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# Run migrations to create necessary tables (including users and personal_access_tokens)
+php artisan migrate
+```
 
-## Code of Conduct
+**Note:** Ensure your `.env` file is properly configured with your database credentials.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 2. Database Migrations and Models (Conceptual)
 
-## Security Vulnerabilities
+While not explicitly provided, ensure you have appropriate migrations and models for `Post` and `Comment`, with their `fillable` properties correctly defined, and relationships set up.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+**Example Models (Conceptual):**
 
-## License
+* **`app/Models/User.php`** (Laravel's default, ensure it uses `HasApiTokens` trait)
+    ```php
+    use Laravel\Sanctum\HasApiTokens;
+    // ...
+    class User extends Authenticatable
+    {
+        use HasApiTokens, Notifiable;
+        // ...
+    }
+    ```
+* **`app/Models/Post.php`**
+    ```php
+    namespace App\Models;
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+    use Illuminate\Database\Eloquent\Factories\HasFactory;
+    use Illuminate\Database\Eloquent\Model;
+
+    class Post extends Model
+    {
+        use HasFactory;
+
+        protected $fillable = ['title', 'body', 'user_id'];
+
+        public function user()
+        {
+            return $this->belongsTo(User::class);
+        }
+
+        public function comments()
+        {
+            return $this->hasMany(Comment::class);
+        }
+    }
+    ```
+* **`app/Models/Comment.php`**
+    ```php
+    namespace App\Models;
+
+    use Illuminate\Database\Eloquent\Factories\HasFactory;
+    use Illuminate\Database\Eloquent\Model;
+
+    class Comment extends Model
+    {
+        use HasFactory;
+
+        protected $fillable = ['body', 'user_id', 'post_id'];
+
+        public function user()
+        {
+            return $this->belongsTo(User::class);
+        }
+
+        public function post()
+        {
+            return $this->belongsTo(Post::class);
+        }
+    }
+    ```
+* **Corresponding Migrations:** Ensure migrations for `posts` and `comments` tables exist with foreign keys linking `user_id` and `post_id`.
+
+### 3. Configure Sanctum API Guard
+
+In `config/auth.php`, ensure `sanctum` is listed under the `guards` section and `api` is using the `sanctum` driver:
+
+```php
+    'guards' => [
+        'web' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
+
+        'api' => [
+            'driver' => 'sanctum', // Ensure this is 'sanctum'
+            'provider' => 'users',
+            'hash' => false,
+        ],
+    ],
+```
+
+And ensure the `routes/api.php` file routes are wrapped in the `auth:sanctum` middleware where required.
+
+---
+
+## 💻 API Endpoints
+
+All API endpoints are prefixed with `http://localhost/blog-api/public/api/`. Make sure your Laravel development server is running (e.g., `php artisan serve` or using XAMPP/WAMP).
+
+### 1. User Registration
+
+* **URL:** `http://localhost/blog-api/public/api/register`
+* **Method:** `POST`
+* **Headers:** `Content-Type: application/json`
+* **Body (JSON - raw):**
+    ```json
+    {
+      "name": "Amir",
+      "email": "amir@gmail.com",
+      "password": "password",
+      "password_confirmation": "password"
+    }
+    ```
+* **Success Response:**
+    ```json
+    {
+      "user": {
+        "id": 1,
+        "name": "Amir",
+        "email": "amir@example.com",
+        // ... other user details
+      },
+      "token": "1|eB2x9g3Zr...your_sanctum_token..."
+    }
+    ```
+
+### 2. User Login
+
+* **URL:** `http://localhost/blog-api/public/api/login`
+* **Method:** `POST`
+* **Headers:** `Content-Type: application/json`
+* **Body (JSON - raw):**
+    ```json
+    {
+      "email": "amir@gmail.com",
+      "password": "password"
+    }
+    ```
+* **Success Response:** (Similar to registration, returns user details and a new token)
+    ```json
+    {
+      "user": {
+        "id": 1,
+        "name": "Amir",
+        "email": "amir@gmail.com",
+        // ...
+      },
+      "token": "2|ABCDE123...another_sanctum_token..."
+    }
+    ```
+    **Note:** This `token` will be used for authenticated requests.
+
+### 3. Create a Post (Authenticated)
+
+* **URL:** `http://localhost/blog-api/public/api/posts`
+* **Method:** `POST`
+* **Headers:**
+    * `Content-Type: application/json`
+    * `Authorization: Bearer <your_sanctum_token>` (Replace `<your_sanctum_token>` with the token obtained from login/registration)
+* **Body (JSON - raw):**
+    ```json
+    {
+      "title": "This is my first blog post",
+      "body": "This is the content of my first blog post."
+    }
+    ```
+* **Success Response:** (Example)
+    ```json
+    {
+        "post": {
+            "title": "This is my first blog post",
+            "body": "This is the content of my first blog post.",
+            "user_id": 1,
+            "updated_at": "2025-06-13T09:49:23.000000Z",
+            "created_at": "2025-06-13T09:49:23.000000Z",
+            "id": 1
+        }
+    }
+    ```
+
+### 4. Get All Posts
+
+* **URL:** `http://localhost/blog-api/public/api/posts`
+* **Method:** `GET`
+* **Headers:** (No authentication required for public access, but can be added if your route is protected)
+* **Success Response (with Pagination and eager loaded user/comments):**
+    ```json
+    {
+        "data": [
+            {
+                "id": 1,
+                "title": "this is title",
+                "body": "this is body of the post",
+                "user": {
+                    "id": 1,
+                    "name": "Amir"
+                },
+                "comments": [],
+                "created_at": "2025-06-13 09:49:23"
+            },
+            {
+                "id": 2,
+                "title": "this is title1",
+                "body": "this is body of the post1",
+                "user": {
+                    "id": 1,
+                    "name": "Amir"
+                },
+                "comments": [],
+                "created_at": "2025-06-13 09:56:08"
+            }
+        ],
+        "links": {
+            "first": "http://localhost/blog-api/public/api/posts?page=1",
+            "last": "http://localhost/blog-api/public/api/posts?page=1",
+            "prev": null,
+            "next": null
+        },
+        "meta": {
+            "current_page": 1,
+            "from": 1,
+            "last_page": 1,
+            "links": [
+                {
+                    "url": null,
+                    "label": "&laquo; Previous",
+                    "active": false
+                },
+                {
+                    "url": "http://localhost/blog-api/public/api/posts?page=1",
+                    "label": "1",
+                    "active": true
+                },
+                {
+                    "url": null,
+                    "label": "Next &raquo;",
+                    "active": false
+                }
+            ],
+            "path": "http://localhost/blog-api/public/api/posts",
+            "per_page": 10,
+            "to": 2,
+            "total": 2
+        }
+    }
+    ```
+
+### 5. Update a Post (Authenticated)
+
+* **URL:** `http://localhost/blog-api/public/api/posts/{post_id}` (e.g., `http://localhost/blog-api/public/api/posts/2`)
+* **Method:** `PUT` (or `PATCH`)
+* **Headers:**
+    * `Content-Type: application/json`
+    * `Authorization: Bearer <your_sanctum_token>`
+* **Body (JSON - raw):**
+    ```json
+    {
+      "title": "Updated Title for Post 2",
+      "body": "This is the updated body content for Post 2."
+    }
+    ```
+* **Success Response:** (Example, updated post details)
+    ```json
+    {
+        "post": {
+            "id": 2,
+            "title": "Updated Title for Post 2",
+            "body": "This is the updated body content for Post 2.",
+            "user_id": 1,
+            "created_at": "2025-06-13T09:56:08.000000Z",
+            "updated_at": "2025-06-18T07:00:00.000000Z"
+        }
+    }
+    ```
+
+### 6. Add a Comment to a Post (Authenticated)
+
+* **URL:** `http://localhost/blog-api/public/api/posts/{post_id}/comments` (e.g., `http://localhost/blog-api/public/api/posts/1/comments`)
+* **Method:** `POST`
+* **Headers:**
+    * `Content-Type: application/json`
+    * `Authorization: Bearer <your_sanctum_token>`
+* **Body (JSON - raw):**
+    ```json
+    {
+      "body": "This is my first comment by Amir!"
+    }
+    ```
+* **Success Response:**
+    ```json
+    {
+        "comment": {
+            "body": "This is my first comment by Amir!",
+            "user_id": 1, // The authenticated user's ID
+            "post_id": 1, // The post ID the comment was added to
+            "updated_at": "2025-06-18T07:05:00.000000Z",
+            "created_at": "2025-06-18T07:05:00.000000Z",
+            "id": 1
+        }
+    }
+    ```
+
+    **Example `Get All Posts` response with comments populated:**
+    ```json
+    {
+        "data": [
+            {
+                "id": 1,
+                "title": "this is title",
+                "body": "this is body of the post",
+                "user": { "id": 1, "name": "Amir" },
+                "comments": [
+                    { "id": 1, "body": "this is my first comment by amir", "user": "Amir" },
+                    { "id": 2, "body": "this is another comment by amir", "user": "Amir" },
+                    { "id": 3, "body": "This is knowledgable post", "user": "Amir" }
+                ],
+                "created_at": "2025-06-13 09:49:23"
+            },
+            {
+                "id": 2,
+                "title": "Updated Title",
+                "body": "Updated body",
+                "user": { "id": 1, "name": "Amir" },
+                "comments": [],
+                "created_at": "2025-06-13 09:56:08"
+            }
+        ],
+        "links": { /* ... */ },
+        "meta": { /* ... */ }
+    }
+    ```
+
+### 7. Logout User (Authenticated)
+
+* **URL:** `http://localhost/blog-api/public/api/logout`
+* **Method:** `POST`
+* **Headers:**
+    * `Accept: application/json`
+    * `Authorization: Bearer <your_sanctum_token>`
+* **Success Response:**
+    ```json
+    {
+        "message": "Logged out."
+    }
+    ```
+    After logout, the token used will be invalidated, and you will receive an "Unauthenticated." error for subsequent requests requiring authentication with that token.
+
+---
+
+## 🔒 Authentication Reminder
+
+For any endpoint requiring authentication (e.g., creating posts, updating posts, adding comments, logging out), you **must** include the `Authorization` header with a valid Sanctum Bearer Token obtained from the `/register` or `/login` endpoints.
+
+**Example Header:**
+
+```
+Authorization: Bearer 1|eB2x9g3Zr...your_sanctum_token...
+```
+
+If you try to access an authenticated endpoint without a valid token, you will receive:
+
+```json
+{
+    "message": "Unauthenticated."
+}
+```
+
+---
+
+## 🤝 Contributing
+
+Feel free to fork the repository, make improvements, and submit pull requests.
+
+---
+
+## 📜 License
+
+This project is open-source and free to use.
+
+---
+
+## 👤 Author
+
+Amir Saifi
